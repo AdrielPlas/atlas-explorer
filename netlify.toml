@@ -22,6 +22,8 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  VITE_API_URL = "/api"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_API_URL"
 
 # El orden importa: primero la API y despues el comodin del frontend.
 # Si estuviera al reves, /api/locations devolveria el index.html.
