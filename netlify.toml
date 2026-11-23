@@ -1,0 +1,40 @@
+# Configuracion de Netlify.
+#
+# Un solo sitio sirve el frontend y el backend:
+#   - el frontend compilado se publica desde frontend/dist
+#   - el backend corre como funcion en /.netlify/functions/api
+#   - la regla de /api/* conecta las dos cosas
+#
+# Al compartir dominio, el navegador no considera las peticiones como
+# "de otro origen", asi que no hace falta configurar CORS ni acertarle
+# a FRONTEND_ORIGINS. Tambien queda una sola liga que entregar.
+
+[build]
+  command = "npm run build"
+  publish = "frontend/dist"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # El empaquetador sigue los require() del codigo, pero se declaran los
+  # archivos del backend para que no se quede nada fuera
+  included_files = ["backend/src/**"]
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# El orden importa: primero la API y despues el comodin del frontend.
+# Si estuviera al reves, /api/locations devolveria el index.html.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# React Router maneja las rutas en el navegador, asi que cualquier otra
+# direccion tiene que devolver el index.html. Sin esta regla, entrar
+# directo a /map o recargar la pagina daria un 404 de Netlify.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
