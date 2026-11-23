@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 
 const routerApi = require("./routes");
+const AppError = require("./utils/appError");
 const {
     notFoundHandler,
     errorHandler
@@ -13,6 +14,48 @@ const app = express();
 
 // Procesa los cuerpos en JSON y los deja en req.body
 app.use(express.json());
+
+/**
+ * Hace falta al correr como funcion serverless.
+ *
+ * serverless-http ya leyo el cuerpo de la peticion y lo deja en req.body
+ * como Buffer. El express.json() de arriba se salta el parseo cuando
+ * req.body ya tiene algo, asi que sin esto los routers recibirian un
+ * Buffer en lugar del objeto y toda validacion responderia 400.
+ *
+ * Corriendo en local no se ejecuta: ahi express.json() ya dejo un objeto
+ * y este middleware no hace nada.
+ */
+app.use((req, res, next) => {
+    if (!Buffer.isBuffer(req.body)) {
+        return next();
+    }
+
+    const contentType = req.headers["content-type"] || "";
+
+    if (!contentType.includes("application/json")) {
+        req.body = {};
+        return next();
+    }
+
+    const texto = req.body.toString("utf8").trim();
+
+    // DELETE y las peticiones sin cuerpo llegan con el Buffer vacio
+    if (texto === "") {
+        req.body = {};
+        return next();
+    }
+
+    try {
+        req.body = JSON.parse(texto);
+    } catch (error) {
+        return next(
+            new AppError(400, "El cuerpo de la peticion no es JSON valido.")
+        );
+    }
+
+    next();
+});
 
 /**
  * CORS: el frontend corre en otro dominio (Vercel) y el backend en otro
