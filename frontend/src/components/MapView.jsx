@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -22,21 +22,52 @@ const iconFor = (color = '#397f91') =>
     iconAnchor: [13, 30]
   });
 
+/**
+ * Coloca el mapa en el centro indicado, pero SOLO cuando ese centro cambia
+ * de verdad.
+ *
+ * El error anterior: center llega como valor por omision, asi que React creaba
+ * un arreglo nuevo en cada render. El useEffect veia una dependencia distinta
+ * cada vez y volvia a llamar a setView, de modo que cualquier cambio de estado
+ * (marcar un vertice, abrir un popup, seleccionar una ubicacion) devolvia el
+ * mapa a su posicion y a su zoom iniciales.
+ *
+ * Por eso se compara por VALOR y no por referencia: se guarda el ultimo centro
+ * aplicado y, si es el mismo, no se toca la vista. Asi el encuadre que el
+ * usuario dejo con el raton se respeta.
+ */
 function Fit({ center }) {
   const map = useMap();
+  const centroAplicado = useRef(null);
 
   useEffect(() => {
-    if (center) map.setView(center, 13);
+    if (!center) return;
+
+    const clave = `${center[0]},${center[1]}`;
+    if (centroAplicado.current === clave) return;
+
+    centroAplicado.current = clave;
+    map.setView(center, 13);
   }, [center, map]);
 
   return null;
 }
 
+/**
+ * Encuadra la zona que el usuario selecciona en la lista.
+ *
+ * Mismo cuidado que arriba: se guarda cual fue la ultima zona encuadrada. Sin
+ * eso, al recargar la lista de zonas el objeto zonesGeo cambia de referencia y
+ * el mapa volvia a encuadrar aunque el usuario no hubiera seleccionado nada
+ * nuevo, moviendole la vista mientras trabajaba.
+ */
 function FitSelectedZone({ zonesGeo, selectedZoneId }) {
   const map = useMap();
+  const zonaEncuadrada = useRef(null);
 
   useEffect(() => {
     if (!zonesGeo?.features || !selectedZoneId) return;
+    if (zonaEncuadrada.current === String(selectedZoneId)) return;
 
     const feature = zonesGeo.features.find((f) => {
       const props = f.properties || {};
@@ -48,6 +79,7 @@ function FitSelectedZone({ zonesGeo, selectedZoneId }) {
 
     const bounds = L.geoJSON(feature).getBounds();
     if (bounds.isValid()) {
+      zonaEncuadrada.current = String(selectedZoneId);
       map.fitBounds(bounds, {
         padding: [40, 40],
         maxZoom: 15,
@@ -172,7 +204,9 @@ export default function MapView({
             icon={iconFor(loc.category?.color)}
             eventHandlers={{ click: () => onSelect?.(loc) }}
           >
-            <Popup>
+            {/* autoPan en false: al abrir el popup el mapa se queda
+                exactamente donde el usuario lo dejo */}
+            <Popup autoPan={false}>
               <div className="map-popup">
                 <b>{loc.name}</b>
 

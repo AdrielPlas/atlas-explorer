@@ -24,7 +24,7 @@ function Building({b,index}) { const {x,y,w,h}=b; const roofY=y-h; return <g cla
   <path d={`M${x+w/2-8} ${y-h*.38} l16 8 v25 l-16 -8Z`} fill="#b9855f" opacity=".8"/>
   <path d={`M${x+5} ${roofY+4} l${w/2-5} -${w/4} ${w/2-5} ${w/4}`} fill="none" stroke="#fff8e9" strokeWidth="3" opacity=".8"/>
  </g> }
-export default function CityWorld({ locations=[], selectedId, onSelect, onExplore, filteredIds=null }) {
+export default function CityWorld({ locations=[], selectedId, onSelect, onExplore, filteredIds=null, showExplore=true}) {
  const visible = useMemo(()=>locations.slice(0,slots.length),[locations]);
  return <div className="city-world" aria-label="Ciudad isométrica interactiva">
   <svg className="city-world-svg" viewBox="0 0 920 690" role="img" aria-label="Ilustración isométrica de una ciudad con edificios, calles, parques y lugares turísticos">
@@ -50,6 +50,8 @@ export default function CityWorld({ locations=[], selectedId, onSelect, onExplor
      </g>})}
   </svg>
   <div className="city-scene-caption"><span><Sparkles size={14}/> CIUDAD ILUSTRADA</span><small>Vista conceptual · ubicaciones reales vinculadas a la ficha</small></div>
-  {onExplore&&<div className="city-hero-copy"><span className="eyebrow">ATLAS EXPLORER</span><h1>Un mundo por<br/><em>descubrir.</em></h1><p>Explora rincones, encuentra lugares especiales y crea tu propia aventura.</p><button className="primary-btn" onClick={onExplore}>Entrar a explorar <MapPin size={15}/></button></div>}
+  {onExplore&&<div className="city-hero-copy"><span className="eyebrow">ATLAS EXPLORER</span><h1>Un mundo por<br/><em>descubrir.</em></h1><p>Explora rincones, encuentra lugares especiales y crea tu propia aventura.</p>{/* En /login el panel es solo ilustracion: el unico boton de entrar
+      debe ser el del formulario */}
+   {showExplore&&<button className="primary-btn" onClick={onExplore}>Entrar a explorar <MapPin size={15}/></button>}</div>}
  </div>
 }

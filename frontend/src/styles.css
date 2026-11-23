@@ -306,3 +306,15 @@ body{background:#f3f3eb;color:var(--ink)}
  .sidebar .nav-link .nav-label{display:none}
  .sidebar .nav-link svg{flex:0 0 auto}
 }
+
+/* ============================================================
+   V7 — ajustes visuales
+   ============================================================ */
+
+/* ---- La marca "atlas explorer" ----
+   .brand traia letter-spacing:-1px y .brand-light un margin-left
+   de -5px. Con Nunito 900 esos dos valores se sumaban y la "s"
+   de atlas quedaba encima de la "e" de explorer. Se deja una
+   separacion normal entre las dos palabras. */
+.brand{letter-spacing:-.4px}
+.brand-light{margin-left:2px}
