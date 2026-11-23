@@ -22,8 +22,12 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Vite reemplaza import.meta.env.VITE_API_URL al compilar, no al ejecutar.
+  # El .env del frontend esta en el .gitignore y nunca llega a Netlify, asi
+  # que sin esta linea el build usaria el valor de respaldo de api.js
+  # (http://localhost:5000/api) y el sitio publicado buscaria el backend en
+  # la computadora de quien lo abre.
   VITE_API_URL = "/api"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_API_URL"
 
 # El orden importa: primero la API y despues el comodin del frontend.
 # Si estuviera al reves, /api/locations devolveria el index.html.

@@ -5,7 +5,7 @@ import {Plus,Search,Edit3,Trash2,X,RefreshCw,Lock,Landmark,Binoculars,Square,Tre
 
 const configs={
   categories:{title:'Categorías',desc:'Consulta los tipos de lugares que dan forma al destino.',endpoint:'/categories',listEndpoint:'/categories/usage',adminOnly:true,fields:[['name','Nombre','text',true],['description','Descripción','text'],['color','Color de categoría','color',true],['icon','Icono','icon'],['allowsPhotoSpots','Admite photo spots','checkbox']]},
-  activities:{title:'Actividades',desc:'Descubre las experiencias disponibles en cada zona.',endpoint:'/activities',collaborative:true,fields:[['title','Nombre de actividad','text',true],['description','Descripción','text'],['zone','Zona','select',true],['icon','Icono','icon'],['difficulty','Dificultad','select']]},
+  activities:{title:'Actividades',desc:'Descubre las experiencias disponibles en cada zona.',endpoint:'/activities',userCreate:true,ownerField:'createdBy',fields:[['title','Nombre de actividad','text',true],['description','Descripción','text'],['zone','Zona','select',true],['icon','Icono','icon'],['difficulty','Dificultad','select']]},
   photoSpots:{title:'Photo spots',desc:'Descubre y comparte los mejores puntos para fotografiar un destino.',endpoint:'/photo-spots',userCreate:true,ownerField:'createdBy',fields:[['title','Título','text',true],['description','Descripción','text',true],['subject','Ubicación fotografiada','select',true],['latitude','Latitud','number',true],['longitude','Longitud','number',true],['bestTime','Mejor momento','select']]},
   reviews:{title:'Reseñas',desc:'Consulta las experiencias compartidas por viajeros.',endpoint:'/reviews',userCreate:true,ownerField:'author',fields:[['rating','Calificación (1 a 5)','number',true],['comment','Comentario','text',true],['location','Ubicación','select',true]]}
 };
@@ -16,12 +16,12 @@ const ownerId=(item,field)=>{const value=item?.[field];return String(value?.id||
 export default function CrudPage({kind}){
  const c=configs[kind]; const {user}=useAuth(); const isAdmin=user?.role==='admin';
  const [items,setItems]=useState([]),[opts,setOpts]=useState({zones:[],locations:[]}),[loading,setLoading]=useState(true),[query,setQuery]=useState(''),[modal,setModal]=useState(false),[editing,setEditing]=useState(null),[form,setForm]=useState({}),[busy,setBusy]=useState(false),[msg,setMsg]=useState('');
- // Las mismas tres politicas de permisos que aplica la API
+ // Las mismas politicas de permisos que aplica la API, para que la interfaz
+ // no ofrezca botones que el servidor va a rechazar con 403
  const canCreate=isAdmin||(!!user&&!c.adminOnly);
  const canEdit=item=>{
   if(isAdmin)return true;                                   // el admin modera todo
   if(!user||c.adminOnly)return false;                       // catalogo global
-  if(c.collaborative)return true;                           // contenido colaborativo
   return c.ownerField&&ownerId(item,c.ownerField)===String(user.id||user._id||''); // solo lo propio
  };
  const load=async()=>{setLoading(true);setMsg('');try{const r=await api.get(c.listEndpoint||c.endpoint);const d=unwrap(r);setItems(Array.isArray(d)?d:[]);if(kind==='activities'){const z=unwrap(await api.get('/zones'));setOpts(o=>({...o,zones:Array.isArray(z)?z:[]}))}if(kind==='photoSpots'||kind==='reviews'){const l=unwrap(await api.get('/locations'));setOpts(o=>({...o,locations:Array.isArray(l)?l:[]}))}}catch(e){setMsg(errorMessage(e))}finally{setLoading(false)}};

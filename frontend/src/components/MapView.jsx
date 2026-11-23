@@ -77,10 +77,12 @@ export default function MapView({
   onMapClick,
   selectedZoneId = '',
   draftPoints = [],
-  // Editar y eliminar se hacen desde el propio popup del marcador
+  // Editar y eliminar se hacen desde el propio popup del marcador.
+  // canModifyLocation es una funcion y no un booleano porque el permiso
+  // depende de CADA ubicacion: solo su autor, o el administrador.
   onEditLocation,
   onDeleteLocation,
-  canModify = false
+  canModifyLocation = () => false
 }) {
   return (
     <MapContainer
@@ -199,12 +201,15 @@ export default function MapView({
                     Ver ficha
                   </button>
 
-                  {/* La rubrica pide editar y eliminar desde el popup */}
-                  {canModify && (
+                  {/* La rubrica pide editar y eliminar desde el popup.
+                      Solo se dibujan si esta sesion puede hacerlo: asi la
+                      interfaz nunca ofrece algo que la API rechaza con 403. */}
+                  {canModifyLocation(loc) && (
                     <>
                       <button
                         type="button"
                         className="popup-action ghost"
+                        aria-label={`Editar ${loc.name}`}
                         onClick={() => onEditLocation?.(loc)}
                       >
                         <Pencil size={13} /> Editar
@@ -213,6 +218,7 @@ export default function MapView({
                       <button
                         type="button"
                         className="popup-action danger"
+                        aria-label={`Eliminar ${loc.name}`}
                         onClick={() => onDeleteLocation?.(loc)}
                       >
                         <Trash2 size={13} /> Eliminar

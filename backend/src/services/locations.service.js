@@ -7,6 +7,7 @@ const ReviewModel = require("../models/review.models");
 const PhotoSpotModel = require("../models/photo-spot.models");
 const AppError = require("../utils/appError");
 const { buildPoint, buildSearchRegex } = require("../utils/geo");
+const { assertIsOwnerOrAdmin } = require("../utils/ownership");
 
 // Campos que se traen de las referencias al poblar
 const POPULATE_CATEGORY = { path: "category", select: "name color icon allowsPhotoSpots" };
@@ -158,12 +159,15 @@ class LocationsService {
     }
 
     // Actualiza solo los campos que vengan en el cuerpo (PATCH)
-    async update(id, changes) {
+    async update(id, changes, user) {
         const location = await LocationModel.findById(id);
 
         if (!location) {
             throw new AppError(404, `No se encontro la ubicacion con el id ${id}.`);
         }
+
+        // Solo quien la registro, o un administrador, puede modificarla
+        assertIsOwnerOrAdmin(location, user, "createdBy");
 
         if (changes.category !== undefined) {
             await this.assertCategoryExists(changes.category);
@@ -198,8 +202,11 @@ class LocationsService {
      * Aqui si se borra en cascada porque una resena o un photo spot sin
      * su ubicacion no significan nada.
      */
-    async delete(id) {
+    async delete(id, user) {
         const location = await this.getById(id);
+
+        // Misma regla que al editar: dueño o administrador
+        assertIsOwnerOrAdmin(location, user, "createdBy");
 
         const [reviews, photoSpots] = await Promise.all([
             ReviewModel.deleteMany({ location: id }),

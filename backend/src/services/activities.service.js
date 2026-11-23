@@ -4,6 +4,7 @@ const ActivityModel = require("../models/activity.models");
 const ZoneModel = require("../models/zone.models");
 const AppError = require("../utils/appError");
 const { buildPoint, buildSearchRegex } = require("../utils/geo");
+const { assertIsOwnerOrAdmin } = require("../utils/ownership");
 
 const POPULATE_ZONE = { path: "zone", select: "name color" };
 const POPULATE_AUTHOR = { path: "createdBy", select: "name" };
@@ -164,6 +165,9 @@ class ActivitiesService {
             throw new AppError(404, `No se encontro la actividad con el id ${id}.`);
         }
 
+        // Solo quien la propuso, o un administrador, puede modificarla
+        assertIsOwnerOrAdmin(activity, user, "createdBy");
+
         if (changes.zone !== undefined) {
             await this.assertZoneExists(changes.zone);
             activity.zone = changes.zone;
@@ -189,6 +193,9 @@ class ActivitiesService {
         if (!activity) {
             throw new AppError(404, `No se encontro la actividad con el id ${id}.`);
         }
+
+        // Misma regla que al editar: dueño o administrador
+        assertIsOwnerOrAdmin(activity, user, "createdBy");
 
         const respuesta = await this.getById(id, user);
 

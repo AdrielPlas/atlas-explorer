@@ -107,7 +107,7 @@ router.patch(
     validateObjectId(),
     requireAnyField(...EDITABLES),
     async (req, res) => {
-        const zone = await service.update(req.params.id, req.body);
+        const zone = await service.update(req.params.id, req.body, req.user);
 
         res.status(200).json({
             message: "Zona actualizada correctamente",
@@ -122,7 +122,7 @@ router.delete(
     protect,
     validateObjectId(),
     async (req, res) => {
-        const { zone, removed } = await service.delete(req.params.id);
+        const { zone, removed } = await service.delete(req.params.id, req.user);
 
         res.status(200).json({
             message: "Zona eliminada correctamente",

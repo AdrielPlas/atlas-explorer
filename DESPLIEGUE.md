@@ -130,5 +130,5 @@ tienen IP fija. El control de acceso está en las credenciales.
 | `/api/health` da 404 | la regla de redirección no se aplicó | revisar que `netlify.toml` esté en la raíz del repositorio |
 | `/api/health` responde pero `/api/locations` da 503 | no conecta a Atlas | revisar `MONGODB_URI` y Network Access |
 | Entrar a `/map` da 404 al recargar | falta el comodín del SPA | ya está en `netlify.toml`: la regla `/*` → `/index.html` |
-| La app carga pero el login da error de red | el frontend apunta a otra URL | `VITE_API_URL` debe ser `/api` |
+| La app carga pero el login da `ERR_CONNECTION_REFUSED` a `localhost:5000` | el build no tuvo `VITE_API_URL` | ya está en `[build.environment]` de `netlify.toml`; hay que **volver a desplegar**, porque Vite la inserta al compilar |
 | `count: 0` en todo | falta correr el seed | `npm run seed` apuntando al mismo Atlas |

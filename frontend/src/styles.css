@@ -202,3 +202,107 @@ body{background:#f3f3eb;color:var(--ink)}
  .locations-table-section .section-heading{display:block}
  .locations-table-section .result-badge{display:inline-block;margin-top:9px}
 }
+
+/* ============================================================
+   V6 — correcciones de la ronda de pruebas
+   Se usan los mismos tokens del tema: verde #4d9275, tinta
+   #263b3b, tarjetas #fffdf8 y titulares en Nunito.
+   ============================================================ */
+
+/* ---- UI-07: la lista de zonas ----
+   El renglon dejo de ser un <button> con <span role="button">
+   dentro (anidar botones no es valido y los span no tienen
+   nombre accesible). Ahora es un contenedor con tres botones
+   reales, asi que hay que repartir el espacio otra vez. */
+.zone-list-item{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ width:100%;
+ padding:12px 6px;
+ border-bottom:1px solid #eeece3;
+ color:#314b48;
+}
+.zone-list-item.selected,
+.zone-list-item:hover{
+ background:#edf4ed;
+ border-radius:10px;
+ padding-left:10px;
+}
+.zone-list-main{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ flex:1;
+ min-width:0;
+ padding:0;
+ border:0;
+ background:transparent;
+ color:inherit;
+ font:inherit;
+ text-align:left;
+}
+.zone-list-main>i{
+ width:11px;
+ height:11px;
+ border-radius:50%;
+ flex:0 0 11px;
+}
+.zone-list-main>span{
+ display:grid;
+ gap:4px;
+ min-width:0;
+ flex:1;
+}
+.zone-list-item b{font-size:11px}
+.zone-list-item small{font-size:9px;color:#819087;line-height:1.4}
+
+.zone-item-actions{display:flex;gap:4px;color:#6f897c;flex:0 0 auto}
+.zone-action-btn{
+ display:grid;
+ place-items:center;
+ width:30px;
+ height:30px;
+ padding:0;
+ border:1px solid transparent;
+ border-radius:8px;
+ background:transparent;
+ color:#6f897c;
+ transition:.16s;
+}
+.zone-action-btn:hover{background:#e3efe6;color:#4d9275;border-color:#d3e4d7}
+.zone-action-btn.danger:hover{background:#fff0ed;color:#c65e4c;border-color:#f0d7d0}
+/* El foco del teclado tiene que verse: es parte de UI-07 */
+.zone-action-btn:focus-visible,
+.zone-list-main:focus-visible,
+.icon-btn:focus-visible,
+.popup-action:focus-visible{
+ outline:2px solid #4d9275;
+ outline-offset:2px;
+ border-radius:8px;
+}
+
+/* ---- CITY-08 (1366x768) ----
+   La insignia que Netlify fija abajo a la derecha tapaba la
+   ultima fila de botones. Se reserva ese espacio al final de
+   la pagina en lugar de pelearse con un elemento ajeno. */
+.page-content{padding-bottom:104px}
+.zone-list-items{padding-bottom:16px}
+.zone-draw-form{margin-bottom:8px}
+
+/* ---- CITY-08 (768x1024) ----
+   Con la barra lateral estrecha, la regla anterior ocultaba el
+   texto de los enlaces MENOS el activo, asi que "Ciudad" se
+   desbordaba de los 78px y se encimaba con el encabezado.
+   Ahora se oculta la etiqueta de todos; el icono queda, y el
+   nombre sigue anunciandose por aria-label. */
+@media(max-width:900px){
+ .sidebar{overflow:hidden}
+ .sidebar .nav-link{
+  justify-content:center;
+  overflow:hidden;
+  white-space:nowrap;
+ }
+ .sidebar .nav-link .nav-label{display:none}
+ .sidebar .nav-link svg{flex:0 0 auto}
+}

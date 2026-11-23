@@ -5,6 +5,7 @@ const LocationModel = require("../models/location.models");
 const ActivityModel = require("../models/activity.models");
 const AppError = require("../utils/appError");
 const { buildPolygon, buildPoint, buildSearchRegex } = require("../utils/geo");
+const { assertIsOwnerOrAdmin } = require("../utils/ownership");
 
 const POPULATE_AUTHOR = { path: "createdBy", select: "name" };
 
@@ -82,12 +83,15 @@ class ZonesService {
     }
 
     // Actualiza solo los campos que vengan en el cuerpo (PATCH)
-    async update(id, changes) {
+    async update(id, changes, user) {
         const zone = await ZoneModel.findById(id);
 
         if (!zone) {
             throw new AppError(404, `No se encontro la zona con el id ${id}.`);
         }
+
+        // Solo quien la trazo, o un administrador, puede modificarla
+        assertIsOwnerOrAdmin(zone, user, "createdBy");
 
         const campos = ["name", "description", "color"];
 
@@ -112,8 +116,11 @@ class ZonesService {
      * Se borran en cascada porque una actividad existe solo dentro de su zona;
      * sin ella no se podria activar nunca.
      */
-    async delete(id) {
+    async delete(id, user) {
         const zone = await this.getById(id);
+
+        // Misma regla que al editar: dueño o administrador
+        assertIsOwnerOrAdmin(zone, user, "createdBy");
 
         const actividades = await ActivityModel.deleteMany({ zone: id });
 

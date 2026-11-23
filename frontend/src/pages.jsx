@@ -57,8 +57,17 @@ export function CityExplore(){
 
 export function Explore(){
  const {user}=useAuth();const navigate=useNavigate();const [searchParams]=useSearchParams();
- // El catalogo geografico es colaborativo: basta con tener sesion
+ // Cualquiera con sesion puede REGISTRAR una ubicacion...
  const canModify=!!user;
+ // ...pero editarla o borrarla solo quien la registro, o el administrador.
+ // Es la misma regla que aplica la API; si no coincidiera, la interfaz
+ // mostraria botones que el servidor rechaza con 403.
+ const isOwner=loc=>{
+  if(!user)return false;
+  if(user.role==='admin')return true;
+  const dueno=loc?.createdBy;
+  return String(dueno?.id||dueno?._id||dueno||'')===String(user.id||user._id||'');
+ };
  const [locations,setLocations]=useState([]),[categories,setCategories]=useState([]),[zones,setZones]=useState([]),[geo,setGeo]=useState(null);
  const [q,setQ]=useState(''),[cat,setCat]=useState(''),[zone,setZone]=useState('');
  const [selected,setSelected]=useState(null),[loading,setLoading]=useState(true),[err,setErr]=useState(''),[ok,setOk]=useState('');
@@ -118,9 +127,9 @@ export function Explore(){
   {ok&&<div className="notice-success"><CheckCircle2 size={16}/>{ok}<button onClick={()=>setOk('')} aria-label="Cerrar"><X size={14}/></button></div>}
   {err&&<div className="alert">{err}<button onClick={()=>setErr('')}><X size={14}/></button></div>}
 
-  <div className="map-workspace"><aside className="map-results-panel"><div className="map-results-head"><div><span className="eyebrow">EXPLORA EL DESTINO</span><h2>Lugares registrados</h2><small>{loading?'Actualizando…':`${locations.length} resultados`}</small></div><SlidersHorizontal size={18}/></div><div className="map-results-list">{locations.map(l=><button key={l.id} className={`map-result-row ${selected?.id===l.id?'selected':''}`} onClick={()=>setSelected(l)}><span className="map-result-icon" style={{'--place-color':l.category?.color||'#397f91'}}><MapPin size={19}/></span><span className="map-result-copy"><b>{l.name}</b><small>{l.category?.name||'Destino'} · {l.address||'Ubicación registrada'}</small><em>{l.status||'Lugar turístico'}</em></span><ArrowUpRight size={16}/></button>)}{!loading&&!locations.length&&<div className="empty-state">No encontramos ubicaciones con estos filtros.</div>}</div>{selected&&<div className="map-selected-card"><button className="close-mini" onClick={()=>setSelected(null)}>×</button><span className="eyebrow">LUGAR SELECCIONADO</span><b>{selected.name}</b><p>{selected.description}</p><div className="row-actions"><Link to={`/location/${selected.id}`} className="inline-link">Ver ficha <ArrowUpRight size={14}/></Link>{canModify&&<><button className="icon-btn" onClick={()=>openEdit(selected)} title="Editar ubicación"><Edit3 size={15}/></button><button className="icon-btn danger" onClick={()=>deleteLocation(selected)} title="Eliminar ubicación"><Trash2 size={15}/></button></>}</div></div>}</aside>
+  <div className="map-workspace"><aside className="map-results-panel"><div className="map-results-head"><div><span className="eyebrow">EXPLORA EL DESTINO</span><h2>Lugares registrados</h2><small>{loading?'Actualizando…':`${locations.length} resultados`}</small></div><SlidersHorizontal size={18}/></div><div className="map-results-list">{locations.map(l=><button key={l.id} className={`map-result-row ${selected?.id===l.id?'selected':''}`} onClick={()=>setSelected(l)}><span className="map-result-icon" style={{'--place-color':l.category?.color||'#397f91'}}><MapPin size={19}/></span><span className="map-result-copy"><b>{l.name}</b><small>{l.category?.name||'Destino'} · {l.address||'Ubicación registrada'}</small><em>{l.status||'Lugar turístico'}</em></span><ArrowUpRight size={16}/></button>)}{!loading&&!locations.length&&<div className="empty-state">No encontramos ubicaciones con estos filtros.</div>}</div>{selected&&<div className="map-selected-card"><button className="close-mini" onClick={()=>setSelected(null)}>×</button><span className="eyebrow">LUGAR SELECCIONADO</span><b>{selected.name}</b><p>{selected.description}</p><div className="row-actions"><Link to={`/location/${selected.id}`} className="inline-link">Ver ficha <ArrowUpRight size={14}/></Link>{isOwner(selected)?<><button className="icon-btn" onClick={()=>openEdit(selected)} title="Editar ubicación" aria-label={`Editar ${selected.name}`}><Edit3 size={15}/></button><button className="icon-btn danger" onClick={()=>deleteLocation(selected)} title="Eliminar ubicación" aria-label={`Eliminar ${selected.name}`}><Trash2 size={15}/></button></>:<span className="muted-inline">{user?'Registrada por otro viajero':'Solo lectura'}</span>}</div></div>}</aside>
 
-   <div className="map-panel map-canvas-panel"><div className="panel-top"><div><b>Mapa geográfico</b><small>{canModify?'Haz clic en el mapa para registrar una ubicación':'Inicia sesión para registrar lugares'}</small></div><span className="map-tag"><MapIcon size={14}/> LEAFLET · OPENSTREETMAP</span></div><MapView locations={locations} zonesGeo={geo} onSelect={setSelected} onViewDetails={loc=>navigate(`/location/${loc.id}`)} center={center} selectedZoneId={zone} interactive={canModify} onMapClick={canModify?setPoint:undefined} canModify={canModify} onEditLocation={openEdit} onDeleteLocation={deleteLocation}/></div>
+   <div className="map-panel map-canvas-panel"><div className="panel-top"><div><b>Mapa geográfico</b><small>{canModify?'Haz clic en el mapa para registrar una ubicación':'Inicia sesión para registrar lugares'}</small></div><span className="map-tag"><MapIcon size={14}/> LEAFLET · OPENSTREETMAP</span></div><MapView locations={locations} zonesGeo={geo} onSelect={setSelected} onViewDetails={loc=>navigate(`/location/${loc.id}`)} center={center} selectedZoneId={zone} interactive={canModify} onMapClick={canModify?setPoint:undefined} canModifyLocation={isOwner} onEditLocation={openEdit} onDeleteLocation={deleteLocation}/></div>
   </div>
 
   {/* Tabla de ubicaciones registradas: todos los campos menos el ID, la categoria por su nombre */}
@@ -137,7 +146,7 @@ export function Explore(){
      <td>{l.createdBy?.name||'Comunidad'}</td>
      <td>{fecha(l.createdAt)}</td>
      <td>{fecha(l.updatedAt)}</td>
-     <td><div className="row-actions"><Link to={`/location/${l.id}`} className="icon-btn" title="Ver ficha" onClick={e=>e.stopPropagation()}><ArrowUpRight size={15}/></Link>{canModify?<><button className="icon-btn" title="Editar" onClick={e=>{e.stopPropagation();openEdit(l)}}><Edit3 size={15}/></button><button className="icon-btn danger" title="Eliminar" onClick={e=>{e.stopPropagation();deleteLocation(l)}}><Trash2 size={15}/></button></>:<span className="muted-inline">Solo lectura</span>}</div></td>
+     <td><div className="row-actions"><Link to={`/location/${l.id}`} className="icon-btn" title="Ver ficha" aria-label={`Ver ficha de ${l.name}`} onClick={e=>e.stopPropagation()}><ArrowUpRight size={15}/></Link>{isOwner(l)?<><button className="icon-btn" title="Editar" aria-label={`Editar ${l.name}`} onClick={e=>{e.stopPropagation();openEdit(l)}}><Edit3 size={15}/></button><button className="icon-btn danger" title="Eliminar" aria-label={`Eliminar ${l.name}`} onClick={e=>{e.stopPropagation();deleteLocation(l)}}><Trash2 size={15}/></button></>:<span className="muted-inline">{user?'De otro viajero':'Solo lectura'}</span>}</div></td>
     </tr>)}</tbody></table></div></div>
   </section>
 
@@ -182,8 +191,15 @@ export function Checklist(){
 export function Categories(){return <CrudPage kind="categories"/>}export function Activities(){return <CrudPage kind="activities"/>}export function PhotoSpots(){return <CrudPage kind="photoSpots"/>}export function Reviews(){return <CrudPage kind="reviews"/>}
 export function Zones(){
  const {user}=useAuth();
- // El trazo de zonas es colaborativo: basta con tener sesion
+ // Cualquiera con sesion puede TRAZAR una zona...
  const canModify=!!user;
+ // ...pero editarla o borrarla solo quien la trazo, o el administrador
+ const isOwner=z=>{
+  if(!user)return false;
+  if(user.role==='admin')return true;
+  const dueno=z?.createdBy;
+  return String(dueno?.id||dueno?._id||dueno||'')===String(user.id||user._id||'');
+ };
  const [zones,setZones]=useState([]),[geo,setGeo]=useState(null),[name,setName]=useState(''),[desc,setDesc]=useState(''),[color,setColor]=useState('#4d9275'),[points,setPoints]=useState([]),[editing,setEditing]=useState(null),[selectedZone,setSelectedZone]=useState(''),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false);
  const load=async()=>{try{const [z,g]=await Promise.all([api.get('/zones'),api.get('/zones/geojson')]);setZones(unwrap(z)||[]);setGeo(g.data)}catch(e){setMsg(errorMessage(e))}};
  useEffect(()=>{load()},[]);
@@ -194,7 +210,11 @@ export function Zones(){
  const remove=async z=>{if(!confirm(`¿Eliminar ${z.name} y las actividades asociadas?`))return;try{await api.delete(`/zones/${z.id}`);if(selectedZone===z.id)setSelectedZone('');await load()}catch(e){setMsg(errorMessage(e))}};
  return <section><div className="page-heading"><div><div className="eyebrow">TERRITORIO Y GEOGRAFÍA</div><h1>Zonas del mapa</h1><p>Consulta las áreas geográficas y descubre qué actividades pertenecen a cada sector.</p></div></div>{msg&&<div className="alert">{msg}<button onClick={()=>setMsg('')}>×</button></div>}
   <div className="zones-workspace"><div className="map-panel zone-drawing-map"><div className="panel-top"><div><b>{canModify?'Dibuja o selecciona una zona':'Polígonos registrados'}</b><small>{canModify?'Haz clic en el mapa para agregar vértices al polígono':'Selecciona una zona para consultar su área'}</small></div><span className="map-tag">GEOJSON</span></div><MapView zonesGeo={geo} selectedZoneId={selectedZone} interactive={canModify} onMapClick={canModify?(p=>setPoints(v=>[...v,[p.lat,p.lng]])):undefined} draftPoints={points}/></div>
-   <aside className="zone-side-panel"><div className="panel-top"><div><b>Zonas disponibles</b><small>{zones.length} sectores registrados</small></div></div><div className="zone-list-items">{zones.map(z=><button key={z.id} className={`zone-list-item ${selectedZone===z.id?'selected':''}`} onClick={()=>setSelectedZone(z.id)}><i style={{background:z.color}}/><span><b>{z.name}</b><small>{z.description||'Área geográfica'}</small>{(()=>{const center=getZoneCenter(z);return center?<small className="zone-coordinates">Centro aprox. {center.lat.toFixed(5)}, {center.lng.toFixed(5)}</small>:<small className="zone-coordinates">Coordenadas no disponibles</small>})()}</span><span className="zone-item-actions">{canModify&&<><span role="button" tabIndex="0" onClick={e=>{e.stopPropagation();beginEdit(z)}}><Edit3 size={15}/></span><span role="button" tabIndex="0" onClick={e=>{e.stopPropagation();remove(z)}}><Trash2 size={15}/></span></>}</span></button>)}</div></aside></div>
+   <aside className="zone-side-panel"><div className="panel-top"><div><b>Zonas disponibles</b><small>{zones.length} sectores registrados</small></div></div><div className="zone-list-items">{/* Antes todo el renglon era un <button> y dentro iban dos <span role="button">.
+    Un boton no puede contener otros botones, y los span no tienen nombre que
+    un lector de pantalla pueda anunciar. Ahora el renglon es un <div> con
+    tres botones de verdad, cada uno con su aria-label. */}
+{zones.map(z=><div key={z.id} className={`zone-list-item ${selectedZone===z.id?'selected':''}`}><button type="button" className="zone-list-main" aria-label={`Seleccionar la zona ${z.name}`} aria-pressed={selectedZone===z.id} onClick={()=>setSelectedZone(z.id)}><i style={{background:z.color}}/><span><b>{z.name}</b><small>{z.description||'Área geográfica'}</small>{(()=>{const center=getZoneCenter(z);return center?<small className="zone-coordinates">Centro aprox. {center.lat.toFixed(5)}, {center.lng.toFixed(5)}</small>:<small className="zone-coordinates">Coordenadas no disponibles</small>})()}</span></button><span className="zone-item-actions">{isOwner(z)&&<><button type="button" className="zone-action-btn" title="Editar zona" aria-label={`Editar la zona ${z.name}`} onClick={()=>beginEdit(z)}><Edit3 size={15}/></button><button type="button" className="zone-action-btn danger" title="Eliminar zona" aria-label={`Eliminar la zona ${z.name}`} onClick={()=>remove(z)}><Trash2 size={15}/></button></>}</span></div>)}</div></aside></div>
   {canModify&&<form className="zone-create zone-draw-form" onSubmit={save}><div className="zone-form-title"><div><span className="eyebrow">{editing?'EDITAR ZONA':'ADMINISTRACIÓN DEL TERRITORIO'}</span><h3>{editing?'Actualiza el sector':'Crear una nueva zona'}</h3><p>Haz clic en el mapa para marcar los vértices. Se necesitan al menos tres puntos.</p></div><span className="vertex-count">{points.length} puntos</span></div><div className="zone-form-row"><label className="form-field">Nombre de la zona<input required value={name} onChange={e=>setName(e.target.value)} placeholder="Ej. Centro Histórico"/></label><label className="form-field">Color identificador<input type="color" value={color} onChange={e=>setColor(e.target.value)}/></label></div><label className="form-field">Descripción<input value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Describe el sector turístico"/></label><div className="zone-form-actions"><div><button type="button" className="secondary-btn" onClick={()=>setPoints(p=>p.slice(0,-1))} disabled={!points.length}>Deshacer punto</button><button type="button" className="secondary-btn" onClick={()=>setPoints([])} disabled={!points.length}>Limpiar polígono</button></div><div><button type="button" className="secondary-btn" onClick={reset}>Cancelar</button><button className="primary-btn" disabled={busy||points.length<3}>{busy?'Guardando…':editing?'Guardar cambios':'Crear zona'}</button></div></div></form>}
   {!canModify&&<div className="notice-card"><Lock size={17}/> Inicia sesión para dibujar y administrar zonas.</div>}
  </section>

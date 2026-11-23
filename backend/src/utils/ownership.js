@@ -5,12 +5,15 @@ const AppError = require("./appError");
 /**
  * Reglas de propiedad del contenido.
  *
- * El catalogo (categorias, ubicaciones, zonas y actividades) es colaborativo:
- * cualquier usuario con sesion puede completarlo y corregirlo, igual que en
- * OpenStreetMap o Wikipedia.
+ * Cualquier usuario con sesion puede APORTAR contenido: ubicaciones, zonas,
+ * actividades, photo spots y resenas.
  *
- * El contenido con voz propia (resenas y photo spots) solo lo puede
- * modificar quien lo escribio, o un administrador.
+ * Pero cada registro queda a nombre de quien lo creo, y solo esa persona
+ * puede editarlo o borrarlo. El administrador puede moderar cualquiera.
+ * Asi un usuario no puede alterar ni borrar el trabajo de otro.
+ *
+ * El unico catalogo cerrado es el de categorias, que se administra con
+ * restrictTo("admin") en su router porque define la estructura del destino.
  */
 function assertIsOwnerOrAdmin(document, user, campo = "createdBy") {
     if (!user) {

@@ -136,7 +136,7 @@ router.patch(
     validateObjectId(),
     requireAnyField(...EDITABLES),
     async (req, res) => {
-        const location = await service.update(req.params.id, req.body);
+        const location = await service.update(req.params.id, req.body, req.user);
 
         res.status(200).json({
             message: "Ubicacion actualizada correctamente",
@@ -151,7 +151,7 @@ router.delete(
     protect,
     validateObjectId(),
     async (req, res) => {
-        const { location, removed } = await service.delete(req.params.id);
+        const { location, removed } = await service.delete(req.params.id, req.user);
 
         res.status(200).json({
             message: "Ubicacion eliminada correctamente",
